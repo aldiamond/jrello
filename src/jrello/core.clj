@@ -20,24 +20,26 @@
 
 (def board-id "ZuuyPheS")
 
-(defn get-tickets [] (let [secrets (get-secrets)
-                           req (str "https://api.trello.com/1/boards/" board-id "/cards?key=" (get secrets :key) "&token=" (get secrets :token))
-                           resp (client/get req {:cookie-policy :none})]
-                       (json/read-str (get resp :body) :key-fn keyword)))
+(defn get-tickets [board-id] (let [secrets (get-secrets)
+                                   req (str "https://api.trello.com/1/boards/" board-id "/cards?key=" (get secrets :key) "&token=" (get secrets :token))
+                                   resp (client/get req {:cookie-policy :none})]
+                               (json/read-str (get resp :body) :key-fn keyword)))
 
-(defn labels [tickets] (->> tickets
-                            (map (fn [ticket] (get ticket :labels)))
-                            (flatten)
-                            (map (fn [label] (get label :name)))
-                            (set)))
+;; Need the following datasets
+;; 1. a map of ticket id to a ticket + status
+;; 2. a map of label id to ticket ids
+;; 3. a set of [label names, label ids]
+;; Then just loop through the labels and print the each ticket status
 
+(defn group-tickets [tickets] (->> tickets
+                                   (map (fn [ticket] {:name (get ticket :name),
+                                                      :labels (map :name (get ticket :labels))}))
+                                   (group-by #(-> % :labels))))
 
-
-(def tickets (get-tickets))
-
-(labels tickets)
+(def tickets (get-tickets board-id))
+(group-tickets tickets)
 
 (defn -main
   "Getting tickets. Please hold..."
   [& args]
-  (clojure.pprint/pprint (get-tickets)))
+  (clojure.pprint/pprint (group-tickets tickets)))
