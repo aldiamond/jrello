@@ -1,4 +1,4 @@
-(ns jrello.core
+(ns jrello.main
   (:gen-class)
   (:require [clj-http.client :as client]
             [clojure.java.io :as io]

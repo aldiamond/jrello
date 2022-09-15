@@ -1,6 +1,6 @@
-(ns jrello.core-test
+(ns jrello.main-test
   (:require [clojure.test :refer :all]
-            [jrello.core :refer :all]))
+            [jrello.main :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
