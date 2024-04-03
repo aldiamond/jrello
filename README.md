@@ -1,26 +1,62 @@
 # jrello
 
-FIXME: description
+Provides statistics for a Sendle trello board including:
+* Count of cards completed
+* Average cycle time per card
+* Forecast days required to complete outstanding projects
+
+## Prerequisites
+
+#### 1. Create trello API user and add credentials to system.edn 
+
+Follow the instructions on https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/ to create an API credentials and token.
+
+Create a file `resources/system.edn` from the map below and add the API key and token.
+
+```clojure
+{:trello-cfg {:key    "changeme"
+              :token  "changeme"}
+ :trello-lists {:to-do       "64dd46ac74c7e393d202bd6f"
+                :in-progress "64dd4b1363b05b68ba9329ba"
+                :qa          "64dd46b61846bfbe144cd6f7"
+                :done        "64dd46bc45c709a1c4fab85c"}}
+```
+
+#### 2. Setup automation to archive items in done column older than 40 working days
+
+Using the automation power-up in Trello create a Scheduled 
+* Select the automation Power-Up on your Trello board and Scheduled
+* Click 'Create automation'
+* Select 'Trigger' > Every day
+* Select 'Action' > Move Cards > archive all the cards 'more than 40 working days' in list 'done'. `Tip: click the hour glass to add days filter`
+* Click 'Save'
 
 ## Installation
 
-Download from http://example.com/FIXME.
+* Install java jdk: `brew install openjdk`
+* Install lein: https://leiningen.org/
+
+## Adding a new trello board
+
+TODO...
+
+## Build
+
+Build jar:
+
+    $ lein uberjar
 
 ## Usage
 
-FIXME: explanation
+Run program main function:
 
-    $ java -jar jrello-0.1.0-standalone.jar [args]
+    $ java -jar jrello-0.1.0-standalone.jar
 
-## Options
+### Future Enhancements
 
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
+* Enhance forecasts to take into consideration time work has been in progress (Cards in lists "In Progress" and "QA") relative to average cycle time.
+* Select lists for multiple boards
+* Write some tests
 
 ...
 

@@ -5,7 +5,9 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [clj-http "3.12.3"]
-                 [org.clojure/data.json "2.4.0"]]
+                 [org.clojure/data.json "2.4.0"]
+                 [org.clojure/data.csv "1.1.0"]
+                 [io.github.kit-clj/kit-core "1.0.6"]]
   :main ^:skip-aot jrello.main
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
