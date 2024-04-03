@@ -11,7 +11,7 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
-secrets.edn
+resources/system.edn
 .calva/
 .clj-kondo/
 .lsp/

@@ -1,6 +1,6 @@
 # jrello
 
-Provides statistics for a Sendle trello board including:
+Provides statistics for a trello board including:
 * Count of cards completed
 * Average cycle time per card
 * Forecast days required to complete outstanding projects
