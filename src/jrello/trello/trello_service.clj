@@ -6,13 +6,15 @@
             [jrello.config :as config])
   (:import (java.time Instant)
            (java.time DayOfWeek Duration ZoneId ZoneOffset ZonedDateTime)
-           (java.time.format DateTimeFormatter)))
+           (java.time.format DateTimeFormatter)
+           (java.time.temporal IsoFields)))
 
 (def UTC "UTC")
 (def NO-DAYS-IN-WEEK 7)
 (def NO-WEEKEND-DAYS 2)
 
-(def exclude-labels #{"sendle", "sc2", "sendle locations", "hubbed api", "🐛 bug", "refactoring", "enhancement 💡"})
+(def exclude-labels-in-progress #{"sendle", "sc2", "sendle locations", "hubbed api", "🐛 bug", "refactoring", "enhancement 💡", "sendle-tracking", "sendle-frontend", "sendle-locations"})
+(def exclude-labels #{"sendle", "sc2", "sendle locations", "hubbed api", "refactoring", "sendle-tracking", "sendle-frontend", "sendle-locations"})
 
 (def get-trello-lists
   (let [{:keys [trello-lists]} (config/read-system-config)]
@@ -64,17 +66,26 @@
         formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")]
     (.format formatter zdt)))
 
+(defn- get-week-of-year [date-time]
+  (-> (format-date date-time)
+      (ZonedDateTime/ofInstant ZoneOffset/UTC)
+      (.get (IsoFields/WEEK_OF_WEEK_BASED_YEAR))))
+
 (defn- build-completed-card-data-map [{:keys [id] :as card}]
   (let [actions (trello-api/get-card-actions id)
         in-progress-date-time (or (get-date-of-list-update actions :in-progress)
                                   (get-date-of-list-update actions :qa)
                                   (get-created-date id))
-        done-date-time (get-date-of-list-update actions :done)]
+        done-date-time (get-date-of-list-update actions :done)
+        default-label "Enhancement 💡"]
     (-> (select-keys card [:id :name :idList])
-        (assoc :idLabel (-> card :idLabels first)
+        (assoc :label-name (or (-> (filter #(not (contains? exclude-labels (string/lower-case (:name %)))) (:labels card))
+                                   first :name)
+                               default-label)
                :in-progress in-progress-date-time
                :done done-date-time
-               :cycle-time (calculate-cycle-time in-progress-date-time done-date-time)))))
+               :cycle-time (calculate-cycle-time in-progress-date-time done-date-time)
+               :week-of-year (get-week-of-year done-date-time)))))
 
 (defn- get-cards-in-done []
   (let [cards (trello-api/get-cards-in-list (:done get-trello-lists))]
@@ -85,14 +96,29 @@
          (count cards))
       format-double-2dp))
 
+(defn- cards-completed-by-label [group-by-label-name]
+  (reduce (fn [agg label]
+            (let [types (get group-by-label-name label)]
+              (conj agg (str label ": " (count types)))))
+          [] (sort (keys group-by-label-name))))
+
+(defn cards-completed-by-week [cards]
+  (let [group-by-week (group-by :week-of-year cards)]
+    (reduce (fn [stats week-as-number]
+              (let [completed-week (get group-by-week week-as-number)]
+                (assoc stats week-as-number (hash-map :count (count completed-week)
+                                                      :by-type (cards-completed-by-label (group-by :label-name completed-week))))))
+            {} (keys group-by-week))))
+
 (defn get-stats-for-completed-cards []
   (let [cards (get-cards-in-done)]
-    {:completed-cards (count cards)
-     :avg-cycle-time  (average-cycle-time cards)}))
+    {:single-stats {:completed-cards (count cards)
+                    :avg-cycle-time  (average-cycle-time cards)}
+     :completed-per-week (cards-completed-by-week cards)}))
 
 (defn- build-awaiting-card-data-map [{:keys [labels] :as card}]
   (-> (select-keys card [:id :name :idList])
-      (assoc :project (-> (filter #(not (contains? exclude-labels (string/lower-case (:name %)))) labels)
+      (assoc :project (-> (filter #(not (contains? exclude-labels-in-progress (string/lower-case (:name %)))) labels)
                           first :name))))
 
 (defn- forecast-days-to-completion
@@ -109,7 +135,7 @@
                       (trello-api/get-cards-in-list (:qa get-trello-lists)))]
     (map #(build-awaiting-card-data-map %) cards)))
 
-(defn get-stats-for-cards-awaiting-completion [{:keys [avg-cycle-time]}]
+(defn get-stats-for-cards-awaiting-completion [avg-cycle-time]
   (let [cards (get-cards-awaiting-completion)
         cards-by-project (group-by :project cards)
         projects (remove nil? (keys cards-by-project))]
@@ -118,7 +144,8 @@
                 (conj stats (hash-map :name project
                                       :cards cards-outstanding
                                       :forecast (forecast-days-to-completion cards-outstanding avg-cycle-time)
-                                      :forecast-two-people (forecast-days-to-completion cards-outstanding avg-cycle-time 2)))))
+                                      :forecast-two-people (forecast-days-to-completion cards-outstanding avg-cycle-time 2)
+                                      :forecast-three-people (forecast-days-to-completion cards-outstanding avg-cycle-time 3)))))
             [] projects)))
 
 (comment

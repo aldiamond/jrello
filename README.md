@@ -3,6 +3,7 @@
 Provides statistics for a trello board including:
 * Count of cards completed
 * Average cycle time per card
+* Cards completed per-week including by card type (Project name, Enhancement or Bug)
 * Forecast days required to complete outstanding projects
 
 ## Prerequisites

@@ -1,7 +1,10 @@
 (ns jrello.main
   (:gen-class)
-  (:require [clojure.string]
-            [jrello.trello.trello-service :as trello-service]))
+  (:require [clojure.string :as string]
+            [clojure.string]
+            [jrello.trello.trello-service :as trello-service])
+  (:import (java.time DayOfWeek)
+           (org.threeten.extra YearWeek)))
 
 (def MAIN-DIVIDER "\n================================\n")
 
@@ -10,19 +13,25 @@
 
 (defn- get-and-print-stats []
   (println MAIN-DIVIDER)
-  (println "Getting trello card details. Please hold....\n")
-  (let [completed-card-stats (trello-service/get-stats-for-completed-cards)
-        cards-awaiting-completion-stats (trello-service/get-stats-for-cards-awaiting-completion completed-card-stats)]
+  (println "Getting trello card details. Please hold....")
+  (let [{:keys [single-stats completed-per-week]} (trello-service/get-stats-for-completed-cards)
+        cards-awaiting-completion-stats (trello-service/get-stats-for-cards-awaiting-completion (:avg-cycle-time single-stats))]
 
     (println MAIN-DIVIDER)
     (println "Completed card stats\n")
     (doseq [stat-kw (keys stat-labels)]
-      (println (format "%30s: %s" (stat-kw stat-labels) (stat-kw completed-card-stats))))
+      (println (format "%30s: %s" (stat-kw stat-labels) (stat-kw single-stats))))
+
+    (println "\nCards completed per week:")
+    (doseq [week (sort > (keys completed-per-week))]
+      (let [week-monday (-> (YearWeek/of 2024 week) (.atDay DayOfWeek/MONDAY))
+            {:keys [count by-type] :as blah} (get completed-per-week week)]
+        (println (format "%5s: %s [%s]" week-monday count (string/join ", " by-type)))))
 
     (println MAIN-DIVIDER)
     (println "Projects awaiting completion\n")
-    (doseq [{:keys [name cards forecast forecast-two-people]} cards-awaiting-completion-stats]
-      (println (format "%20s: %5s cards ~ %5s days one person | %5s days two people" name cards forecast forecast-two-people)))))
+    (doseq [{:keys [name cards forecast forecast-two-people forecast-three-people]} cards-awaiting-completion-stats]
+      (println (format "%20s: %5s cards ~ %5s days one person | %5s days two people | %5s days three people" name cards forecast forecast-two-people forecast-three-people)))))
 
 (defn -main
   "Getting tickets. Please hold..."
