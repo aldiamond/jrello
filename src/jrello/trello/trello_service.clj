@@ -125,9 +125,12 @@
   ([cards-outstanding avg-cycle-time]
    (-> (* cards-outstanding avg-cycle-time) format-double-2dp))
   ([cards-outstanding avg-cycle-time number-of-people]
-   (-> (+ (* (quot cards-outstanding number-of-people) avg-cycle-time)
-          (* (rem cards-outstanding number-of-people) avg-cycle-time))
-       format-double-2dp)))
+   (let [cards-by-people (quot cards-outstanding number-of-people)]
+     (if (= cards-by-people 0)
+       avg-cycle-time
+       (-> (+ (* (quot cards-outstanding number-of-people) avg-cycle-time)
+              (* (rem cards-outstanding number-of-people) avg-cycle-time))
+           format-double-2dp)))))
 
 (defn get-cards-awaiting-completion []
   (let [cards (concat (trello-api/get-cards-in-list (:to-do get-trello-lists))
