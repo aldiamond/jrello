@@ -24,8 +24,8 @@
 
     (println "\nCards completed per week:")
     (doseq [week (sort > (keys completed-per-week))]
-      (let [week-monday (-> (YearWeek/of 2024 week) (.atDay DayOfWeek/MONDAY))
-            {:keys [count by-type] :as blah} (get completed-per-week week)]
+      (let [week-monday (trello-service/get-start-of-week-date week)
+            {:keys [count by-type]} (get completed-per-week week)]
         (println (format "%5s: %s [%s]" week-monday count (string/join ", " by-type)))))
 
     (println MAIN-DIVIDER)

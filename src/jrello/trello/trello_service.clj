@@ -5,9 +5,10 @@
             [clojure.string :as string]
             [jrello.config :as config])
   (:import (java.time Instant)
-           (java.time DayOfWeek Duration ZoneId ZoneOffset ZonedDateTime)
+           (java.time DayOfWeek Duration Year ZoneId ZoneOffset ZonedDateTime)
            (java.time.format DateTimeFormatter)
-           (java.time.temporal IsoFields)))
+           (java.time.temporal IsoFields)
+           (org.threeten.extra YearWeek)))
 
 (def UTC "UTC")
 (def NO-DAYS-IN-WEEK 7)
@@ -71,13 +72,18 @@
       (ZonedDateTime/ofInstant ZoneOffset/UTC)
       (.get (IsoFields/WEEK_OF_WEEK_BASED_YEAR))))
 
+(defn get-start-of-week-date [week]
+  (let [current-year (.getValue (Year/now))]
+    (-> (YearWeek/of current-year week) (.atDay DayOfWeek/MONDAY))))
+
 (defn- build-completed-card-data-map [{:keys [id] :as card}]
   (let [actions (trello-api/get-card-actions id)
         in-progress-date-time (or (get-date-of-list-update actions :in-progress)
                                   (get-date-of-list-update actions :qa)
                                   (get-created-date id))
         done-date-time (get-date-of-list-update actions :done)
-        default-label "Enhancement 💡"]
+        default-label "Enhancement 💡"
+        week-of-year (get-week-of-year done-date-time)]
     (-> (select-keys card [:id :name :idList])
         (assoc :label-name (or (-> (filter #(not (contains? exclude-labels (string/lower-case (:name %)))) (:labels card))
                                    first :name)
@@ -85,7 +91,8 @@
                :in-progress in-progress-date-time
                :done done-date-time
                :cycle-time (calculate-cycle-time in-progress-date-time done-date-time)
-               :week-of-year (get-week-of-year done-date-time)))))
+               :week-of-year week-of-year
+               :week-start-date (get-start-of-week-date week-of-year)))))
 
 (defn- get-cards-in-done []
   (let [cards (trello-api/get-cards-in-list (:done get-trello-lists))]
@@ -154,5 +161,8 @@
 (comment
   ;; write the card data to csv for analysis
   (with-open [writer (io/writer "out-file.csv")]
-    (csv/write-csv writer (map vals (get-cards-in-done))))
+    (let [done-cards (get-cards-in-done)]
+      (csv/write-csv writer (concat
+                              [(keys (first done-cards))]
+                              (map vals done-cards)))))
 )
