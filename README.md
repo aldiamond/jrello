@@ -12,15 +12,19 @@ Provides statistics for a trello board including:
 
 Follow the instructions on https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/ to create an API credentials and token.
 
-Create a file `resources/system.edn` from the map below and add the API key and token.
+Create a file `resources/system.edn` from the map below:
+1. Add the API key and token.
+2. Add a trello boards see instruction below.
 
 ```clojure
 {:trello-cfg {:key    "changeme"
               :token  "changeme"}
- :trello-lists {:to-do       "64dd46ac74c7e393d202bd6f"
-                :in-progress "64dd4b1363b05b68ba9329ba"
-                :qa          "64dd46b61846bfbe144cd6f7"
-                :done        "64dd46bc45c709a1c4fab85c"}}
+ :trello-boards [{:id   "board id"
+                  :name "board name"
+                  :trello-lists {:to-do       "id"
+                                 :in-progress "id"
+                                 :qa          "id"
+                                 :done        "id"}}]}
 ```
 
 #### 2. Setup automation to archive items in done column older than 40 working days
@@ -29,7 +33,7 @@ Using the automation power-up in Trello create a Scheduled
 * Select the automation Power-Up on your Trello board and Scheduled
 * Click 'Create automation'
 * Select 'Trigger' > Every day
-* Select 'Action' > Move Cards > archive all the cards 'more than 40 working days' in list 'done'. `Tip: click the hour glass to add days filter`
+* Select 'Action' > Move Cards > archive all the cards 'more than 60 working days' in list 'done'. `Tip: click the hour glass to add days filter`
 * Click 'Save'
 
 ## Installation
@@ -39,7 +43,12 @@ Using the automation power-up in Trello create a Scheduled
 
 ## Adding a new trello board
 
-TODO...
+1. Get the Board ID from the Trello board URL: https://trello.com/b/<board-id>/<board-name>
+2. Run the function and populate the board list ids for To Do, In Progress, QA and Done.
+```clojure
+(jrello.trello.trello-api/get-lists-on-a-board "board-id")
+```
+3. Add another board map to the `:trello-boards` vector in `resources/system.edn`
 
 ## Build
 

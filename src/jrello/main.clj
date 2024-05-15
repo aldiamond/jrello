@@ -2,20 +2,19 @@
   (:gen-class)
   (:require [clojure.string :as string]
             [clojure.string]
-            [jrello.trello.trello-service :as trello-service])
-  (:import (java.time DayOfWeek)
-           (org.threeten.extra YearWeek)))
+            [jrello.trello.trello-service :as trello-service]))
 
 (def MAIN-DIVIDER "\n================================\n")
 
 (def stat-labels {:avg-cycle-time  "Average cycle time"
-                  :completed-cards "Cards completed (last 40 days)"})
+                  :completed-cards "Cards completed (last 60 days)"})
 
-(defn- get-and-print-stats []
+(defn- get-and-print-stats [{:keys [name] :as trello-board}]
   (println MAIN-DIVIDER)
+  (println (format "Trello Board: %s" name))
   (println "Getting trello card details. Please hold....")
-  (let [{:keys [single-stats completed-per-week]} (trello-service/get-stats-for-completed-cards)
-        cards-awaiting-completion-stats (trello-service/get-stats-for-cards-awaiting-completion (:avg-cycle-time single-stats))]
+  (let [{:keys [single-stats completed-per-week]} (trello-service/get-stats-for-completed-cards trello-board)
+        cards-awaiting-completion-stats (trello-service/get-stats-for-cards-awaiting-completion trello-board (:avg-cycle-time single-stats))]
 
     (println MAIN-DIVIDER)
     (println "Completed card stats\n")
@@ -36,5 +35,5 @@
 (defn -main
   "Getting tickets. Please hold..."
   [& args]
-  ;;TODO:// select board
-  (get-and-print-stats))
+  (doseq [trello-board trello-service/get-trello-boards]
+    (get-and-print-stats trello-board)))

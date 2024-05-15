@@ -20,6 +20,9 @@
 (defn get-cards-in-list [list-id]
   (get-api-call (str "lists/" list-id "/cards")))
 
+(defn get-lists-on-a-board [board-id]
+  (get-api-call (str "boards/" board-id "/lists")))
+
 (defn get-card-actions [card-id]
   (let [path (str "cards/" card-id "/actions")]
     (-> (client/get (build-trello-get-api-url path) {:cookie-policy :none})
