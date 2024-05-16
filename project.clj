@@ -8,7 +8,8 @@
                  [org.clojure/data.json "2.4.0"]
                  [org.clojure/data.csv "1.1.0"]
                  [io.github.kit-clj/kit-core "1.0.6"]
-                 [org.threeten/threeten-extra "1.7.2"]]
+                 [org.threeten/threeten-extra "1.7.2"]
+                 [org.clojure/tools.cli "1.1.230"]]
   :main ^:skip-aot jrello.main
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all

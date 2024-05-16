@@ -17,10 +17,6 @@
 (def exclude-labels-in-progress #{"sendle", "sc2", "sendle locations", "hubbed api", "🐛 bug", "refactoring", "enhancement 💡", "sendle-tracking", "sendle-frontend", "sendle-locations"})
 (def exclude-labels #{"sendle", "sc2", "sendle locations", "hubbed api", "refactoring", "sendle-tracking", "sendle-frontend", "sendle-locations"})
 
-(def get-trello-lists
-  (let [{:keys [trello-lists]} (config/read-system-config)]
-    trello-lists))
-
 (def get-trello-boards
   (let [{:keys [trello-boards]} (config/read-system-config)]
     trello-boards))
@@ -30,6 +26,10 @@
 
 (defn- format-double-2dp [input]
   (Double/parseDouble (format "%.2f" input)))
+
+(defn- format-board-name [name]
+  (-> (string/lower-case name)
+      (.replaceAll " " "-")))
 
 (defn- days-between-two-instants [start-instant end-instant]
   (-> (Duration/between start-instant end-instant)
@@ -126,7 +126,21 @@
   (let [cards (get-cards-in-done trello-board)]
     {:single-stats {:completed-cards (count cards)
                     :avg-cycle-time  (average-cycle-time cards)}
-     :completed-per-week (cards-completed-by-week cards)}))
+     :completed-per-week (cards-completed-by-week cards)
+     :card-stats cards}))
+
+(defn- now-as-date-string []
+  (-> (Instant/now)
+      str
+      (subs 0 10)))
+
+(defn save-stats-for-completed-cards [{:keys [name] :as trello-board} card-stats]
+  (let [csv-filename (format "%s-trello-stats-%s.csv" (format-board-name name) (now-as-date-string))]
+    (with-open [writer (io/writer csv-filename)]
+      (csv/write-csv writer (concat [(keys (first card-stats))] ;;create csv header
+                                    (map vals (sort-by :done card-stats)))))
+    csv-filename))
+
 
 (defn- build-awaiting-card-data-map [{:keys [labels] :as card}]
   (-> (select-keys card [:id :name :idList])
