@@ -62,6 +62,10 @@ Run program main function:
 
     $ java -jar jrello-0.1.0-standalone.jar
 
+Options:
+
+    --save-csv: Save CSV of completed card Trello data for each board
+
 ### Future Enhancements
 
 * Enhance forecasts to take into consideration time work has been in progress (Cards in lists "In Progress" and "QA") relative to average cycle time.
