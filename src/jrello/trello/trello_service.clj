@@ -14,6 +14,8 @@
 (def NO-DAYS-IN-WEEK 7)
 (def NO-WEEKEND-DAYS 2)
 
+(def DEFAULT-CYCLE-TIME 4.00)
+
 (def exclude-labels-in-progress #{"sendle", "sc2", "sendle locations", "hubbed api", "🐛 bug", "refactoring", "enhancement 💡", "sendle-tracking", "sendle-frontend", "sendle-locations"})
 (def exclude-labels #{"sendle", "sc2", "sendle locations", "hubbed api", "refactoring", "sendle-tracking", "sendle-frontend", "sendle-locations"})
 
@@ -104,9 +106,11 @@
     (map #(build-completed-card-data-map trello-lists %) cards)))
 
 (defn- average-cycle-time [cards]
-  (-> (/ (apply + (map :cycle-time cards))
+  (if (> (count cards) 0)
+    (-> (/ (apply + (map :cycle-time cards))
          (count cards))
-      format-double-2dp))
+        format-double-2dp)
+    DEFAULT-CYCLE-TIME))
 
 (defn- cards-completed-by-label [group-by-label-name]
   (reduce (fn [agg label]
@@ -124,10 +128,10 @@
 
 (defn get-stats-for-completed-cards [trello-board]
   (let [cards (get-cards-in-done trello-board)]
-    {:single-stats {:completed-cards (count cards)
-                    :avg-cycle-time  (average-cycle-time cards)}
+    {:single-stats       {:completed-cards (count cards)
+                          :avg-cycle-time  (average-cycle-time cards)}
      :completed-per-week (cards-completed-by-week cards)
-     :card-stats cards}))
+     :card-stats         cards}))
 
 (defn- now-as-date-string []
   (-> (Instant/now)
